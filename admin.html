@@ -452,7 +452,7 @@
       <label class="form-label">كلمة المرور</label>
       <input class="form-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
     </div>
-    <button class="btn-login" onclick="doManualLogin()">دخول ←</button>
+    <button class="btn-login" id="loginBtn">دخول ←</button>
 
     <div style="margin-top:16px;font-size:11px;color:var(--text-muted);">
       بيانات الدخول الافتراضية: admin / admin2024
@@ -779,6 +779,7 @@ function doManualLogin(){
     document.getElementById('loginPass').value='';
   }
 }
+document.getElementById('loginBtn').addEventListener('click',doManualLogin);
 document.getElementById('loginPass').addEventListener('keyup',e=>{ if(e.key==='Enter') doManualLogin(); });
 document.getElementById('loginUser').addEventListener('keyup',e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
 
