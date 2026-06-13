@@ -467,12 +467,10 @@
   <div style="margin-top:6px;">جميع التعريفات موثّقة من مصادر أكاديمية معتمدة</div>
 </footer>
 <!-- ══ Firebase SDK ══ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  const firebaseConfig = {
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
     apiKey: "AIzaSyDFvU6xoRIk9YJ9RH3cRSAgtvPtVblYHq0",
     authDomain: "almuajam-97611.firebaseapp.com",
     databaseURL: "https://almuajam-97611-default-rtdb.europe-west1.firebasedatabase.app",
@@ -480,17 +478,8 @@
     storageBucket: "almuajam-97611.firebasestorage.app",
     messagingSenderId: "618840446770",
     appId: "1:618840446770:web:7bea48dd8ae6c92c24a92b"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-
-  // ── اجعل db متاحاً للسكريبت الرئيسي ──
-  window._db  = db;
-  window._ref = ref;
-  window._set = set;
-  window._get = get;
-  window._onValue = onValue;
+  });
+  window._firebaseDB = firebase.database();
 </script>
 <script>
 /* ───────────────────────────────────────────
@@ -637,26 +626,13 @@ const DEFAULT_TERMS = [
    STORAGE HELPERS
 ─────────────────────────────────────────── */
 function loadTerms(){
-  // Firebase أولاً، localStorage احتياطياً
-  if(window._db){
-    window._onValue(window._ref(window._db, 'terms'), (snap)=>{
-      if(snap.exists()){
-        TERMS = Object.values(snap.val());
-        renderAll();
-      }
-    });
-  }
-  // إرجاع البيانات المحلية مؤقتاً حتى تصل بيانات Firebase
-  const raw = localStorage.getItem('dict_terms');
-  if(raw){ const p=JSON.parse(raw); if(p&&p.length>0) return p; }
-function saveTerms(terms){
-  localStorage.setItem('dict_terms', JSON.stringify(terms)); // احتياطي
-  if(window._db && window._ref && window._set){
-    const termsObj = {};
-    terms.forEach((t,i) => termsObj[t.id || i] = t);
-    window._set(window._ref(window._db, 'terms'), termsObj);
-  }
+  try {
+    const raw = localStorage.getItem('dict_terms');
+    if(raw){ const p=JSON.parse(raw); if(p&&p.length>0) return p; }
+  } catch(e){}
+  return DEFAULT_TERMS;
 }
+function saveTerms(terms){ localStorage.setItem('dict_terms',JSON.stringify(terms)); }
 /* ───────────────────────────────────────────
    ARABIC ALPHABET
 ─────────────────────────────────────────── */
@@ -924,6 +900,22 @@ function init(){
   applyFilters();
 }
 init();
+
+// ── Firebase: تحديث الموقع فور إضافة مصطلح جديد ──
+if(window._firebaseDB){
+  window._firebaseDB.ref('terms').on('value', function(snap){
+    if(snap.exists()){
+      const data = snap.val();
+      TERMS = Object.values(data);
+      localStorage.setItem('dict_terms', JSON.stringify(TERMS));
+      updateStats();
+      renderTOD();
+      buildFieldNav();
+      buildAlphaNav(null);
+      applyFilters();
+    }
+  });
+}
 
 window.addEventListener('storage', ()=>{ TERMS=loadTerms(); init(); });
 </script>

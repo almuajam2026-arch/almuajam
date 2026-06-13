@@ -705,12 +705,10 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 <!-- ══ Firebase SDK ══ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  const firebaseConfig = {
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
     apiKey: "AIzaSyDFvU6xoRIk9YJ9RH3cRSAgtvPtVblYHq0",
     authDomain: "almuajam-97611.firebaseapp.com",
     databaseURL: "https://almuajam-97611-default-rtdb.europe-west1.firebasedatabase.app",
@@ -718,17 +716,8 @@
     storageBucket: "almuajam-97611.firebasestorage.app",
     messagingSenderId: "618840446770",
     appId: "1:618840446770:web:7bea48dd8ae6c92c24a92b"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-
-  // ── اجعل db متاحاً للسكريبت الرئيسي ──
-  window._db  = db;
-  window._ref = ref;
-  window._set = set;
-  window._get = get;
-  window._onValue = onValue;
+  });
+  window._firebaseDB = firebase.database();
 </script>
 <script>
 /* ───────────────────────────────────────────
@@ -834,11 +823,13 @@ function loadTerms(){
   return DEFAULT_TERMS;
 }
 function saveTerms(terms){
-  localStorage.setItem('dict_terms', JSON.stringify(terms)); // احتياطي
-  if(window._db && window._ref && window._set){
+  localStorage.setItem('dict_terms', JSON.stringify(terms));
+  if(window._firebaseDB){
     const termsObj = {};
-    terms.forEach((t,i) => termsObj[t.id || i] = t);
-    window._set(window._ref(window._db, 'terms'), termsObj);
+    terms.forEach((t,i) => termsObj[t.id || 'term_'+i] = t);
+    window._firebaseDB.ref('terms').set(termsObj)
+      .then(()=>  showToast('✅ تم الحفظ في السحابة','success'))
+      .catch(()=> showToast('⚠️ حُفظ محلياً فقط','warning'));
   }
 }
 function genId(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
